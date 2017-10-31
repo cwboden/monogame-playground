@@ -99,7 +99,7 @@ namespace AsteroidEngine
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            if (_sprite1.isCollided || _sprite2.isCollided)
+            if (_sprite1.IsCollided || _sprite2.IsCollided)
             {
                 GraphicsDevice.Clear(_collisionColor);
             }

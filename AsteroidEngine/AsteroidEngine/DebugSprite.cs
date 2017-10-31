@@ -13,11 +13,13 @@ namespace AsteroidEngine
     {
         private Color _rectangleColor;
         private Texture2D _rectangleTexture;
+        private Color _originalColor;
 
-        public DebugSprite(Vector2 position, Color rectangleColor, float speed = 0, float angle = 0, Rectangle? bounds = null) : 
-            base(position, speed, angle, bounds)
+        public DebugSprite(Vector2 position, Color rectangleColor, float speed = 0, float angle = 0, float rotationSpeed = 0, Rectangle? bounds = null) : 
+            base(position, speed, angle, rotationSpeed, bounds)
         {
             _rectangleColor = rectangleColor;
+            _originalColor = Color.Black * 0.1f;
         }
 
         protected override void OnContentLoad(ContentManager contentManager, GraphicsDevice graphicsDevice)
@@ -38,6 +40,7 @@ namespace AsteroidEngine
         public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
         {
             spriteBatch.Draw(_rectangleTexture, Rectangle, Color.White);
+            spriteBatch.Draw(Texture, Position, null, null, Vector2.Zero, 0, null, _originalColor);
 
             base.Draw(spriteBatch, gameTime);
         }
