@@ -46,6 +46,7 @@
     <Compile Include="DebugSprite.cs" />
     <Compile Include="MathEx.cs" />
     <Compile Include="Player.cs" />
+    <Compile Include="Projectile.cs" />
     <Compile Include="Sprite.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -59,6 +60,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\circle.png" />
     <Content Include="Content\ship.png" />
     <Content Include="Icon.ico" />
   </ItemGroup>

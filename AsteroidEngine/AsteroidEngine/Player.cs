@@ -12,11 +12,15 @@ namespace AsteroidEngine
 {
     public class Player : Sprite
     {
+        protected Projectile _projectile;
+        protected List<Projectile> _projectiles;
+
         protected const float MAX_VELOCITY = 10000.0f;
         protected const float MAX_ROTATION_SPEED = (float)Math.PI;
         protected const float TURN_IMPULSE = (float) Math.PI;
         protected const float DRAG_COEFFICIENT = 0.008f;
-        protected const float ACCELERATION = 80.0f;
+        protected const float ACCELERATION = 160.0f;
+        protected const float PROJECTILE_SPEED = 600.0f;
 
         protected Vector2 _velocity;
         protected Vector2 _acceleration;
@@ -34,6 +38,8 @@ namespace AsteroidEngine
             _acceleration = Vector2.Zero;
             _rotationSpeed = 0;
             _rotationAcceleration = 0;
+
+            _projectiles = new List<Projectile>();
         }
 
         public Vector2 Velocity => _velocity;
@@ -42,7 +48,6 @@ namespace AsteroidEngine
         public override void LoadContent(ContentManager content, GraphicsDevice graphicsDevice, string assetName)
         {
             base.LoadContent(content, graphicsDevice, assetName);
-
             OnContentLoad(content, graphicsDevice);
         }
 
@@ -57,7 +62,7 @@ namespace AsteroidEngine
             UpdatePosition(gameTime);
             UpdateRotation(gameTime);
             base.Update(gameTime);
-
+            UpdateProjectiles(gameTime);
             CheckBounds();
         }
 
@@ -85,6 +90,10 @@ namespace AsteroidEngine
             {
                 _acceleration = new Vector2((float)Math.Cos(_angle) * -ACCELERATION,
                                             (float)Math.Sin(_angle) * -ACCELERATION);
+            }
+            if (keyboardState.IsKeyDown(Keys.Space))
+            {
+                FireProjectile();
             }
         }
 
@@ -124,6 +133,24 @@ namespace AsteroidEngine
             base.UpdateRectangle();
         }
 
+        protected virtual void UpdateProjectiles(GameTime gameTime)
+        {
+            foreach (Projectile projectile in _projectiles)
+            {
+                projectile.Update(gameTime);
+            }
+        }
+
+        protected void FireProjectile()
+        {
+            Vector2 projectileVelocity = new Vector2(_velocity.X + PROJECTILE_SPEED,
+                                                     _velocity.Y + PROJECTILE_SPEED);
+
+            Projectile newProjectile = new Projectile(_position, projectileVelocity, _angle, 1.0f, _bounds);
+
+            _projectiles.Add(newProjectile);
+        }
+
         private void CheckBounds()
         {
             if (_bounds == null) return;
@@ -152,6 +179,16 @@ namespace AsteroidEngine
 
             _position = new Vector2((int)_position.X + change.X, (int)_position.Y + change.Y);
             UpdateRectangle();
+        }
+
+        public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
+        {
+            base.Draw(spriteBatch, gameTime);
+
+            foreach (Projectile projectile in _projectiles)
+            {
+                projectile.Draw(spriteBatch, gameTime);
+            }
         }
     }
 }
