@@ -28,6 +28,8 @@ namespace AsteroidEngine
         protected float _rotationAcceleration;
         protected Rectangle? _bounds;
 
+        protected KeyboardState _prevState;
+
         public Player(Vector2 position, float angle = 0, float scale = 1.0f, Rectangle? bounds = null) :
             base(position, angle, scale)
         {
@@ -40,6 +42,8 @@ namespace AsteroidEngine
             _rotationAcceleration = 0;
 
             _projectiles = new List<Projectile>();
+
+            _prevState = Keyboard.GetState();
         }
 
         public Vector2 Velocity => _velocity;
@@ -91,10 +95,12 @@ namespace AsteroidEngine
                 _acceleration = new Vector2((float)Math.Cos(_angle) * -ACCELERATION,
                                             (float)Math.Sin(_angle) * -ACCELERATION);
             }
-            if (keyboardState.IsKeyDown(Keys.Space))
+            if (keyboardState.IsKeyDown(Keys.Space) && _prevState.IsKeyUp(Keys.Space))
             {
                 FireProjectile();
             }
+
+            _prevState = keyboardState;
         }
 
         protected virtual void UpdatePosition(GameTime gameTime)
@@ -141,12 +147,21 @@ namespace AsteroidEngine
             }
         }
 
+        public void NewProjectileType(Projectile projectile)
+        {
+            _projectile = projectile;
+        }
+
         protected void FireProjectile()
         {
-            Vector2 projectileVelocity = new Vector2(_velocity.X + PROJECTILE_SPEED,
-                                                     _velocity.Y + PROJECTILE_SPEED);
+            if (_projectiles.Count >= 5) return;
 
-            Projectile newProjectile = new Projectile(_position, projectileVelocity, _angle, 1.0f, _bounds);
+            Vector2 projectileVelocity = new Vector2((_velocity.X + PROJECTILE_SPEED) * 
+                                                        (float)Math.Cos(_angle),
+                                                     (_velocity.Y + PROJECTILE_SPEED) * 
+                                                        (float)Math.Sin(_angle));
+
+            Projectile newProjectile = new Projectile(_projectile, _position, projectileVelocity, _angle);
 
             _projectiles.Add(newProjectile);
         }

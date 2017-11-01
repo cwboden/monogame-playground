@@ -14,6 +14,7 @@ namespace AsteroidEngine
         SpriteBatch _spriteBatch;
 
         private Player _player;
+        private Projectile _defaultProjectile;
         private Color _clearColor, _collisionColor;
 
         private readonly Rectangle _gameDimensions;
@@ -40,6 +41,8 @@ namespace AsteroidEngine
         {
             _player = new Player(new Vector2(0, (_graphics.GraphicsDevice.Viewport.Height / 2.0f) - 120), 
                                         0, 0.4f, _gameDimensions);
+
+            _defaultProjectile = new Projectile(Vector2.Zero, Vector2.Zero, 0, 0.05f, _gameDimensions);
             
             _clearColor = Color.CornflowerBlue;
             _collisionColor = Color.Red;
@@ -57,6 +60,14 @@ namespace AsteroidEngine
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
             _player.LoadContent(Content, GraphicsDevice, "ship");
+            _defaultProjectile.LoadContent(Content, GraphicsDevice, "circle");
+
+            OnContentLoad();
+        }
+
+        protected virtual void OnContentLoad()
+        {
+            _player.NewProjectileType(_defaultProjectile);
         }
 
         /// <summary>
@@ -66,6 +77,7 @@ namespace AsteroidEngine
         protected override void UnloadContent()
         {
             _player.Unload();
+            _defaultProjectile.Unload();
         }
 
         /// <summary>

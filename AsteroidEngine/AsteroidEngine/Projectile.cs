@@ -10,17 +10,25 @@ namespace AsteroidEngine
 {
     public class Projectile : Sprite
     {
-        protected readonly Vector2 _velocity;
+        protected Vector2 _velocity;
         protected Rectangle? _bounds;
 
-        public Projectile(Vector2 position, Vector2 velocity, Texture2D texture, float angle = 0, float scale = 1.0f, Rectangle? bounds = null) :
+        public Projectile(Vector2 position, Vector2 velocity, float angle = 0, float scale = 1.0f, Rectangle? bounds = null) :
             base(position, angle, scale)
         {
             _velocity = velocity;
             _bounds = bounds;
-            _texture = texture;
+        }
 
-            OnContentLoad();
+        public Projectile(Projectile other, Vector2 position, Vector2 velocity, float angle) :
+            base(position, angle, other._scaleValue)
+        {
+            _velocity = velocity;
+            _bounds = other._bounds;
+
+            _texture = other._texture;
+            _rectangle = other._rectangle;
+            _origin = other._origin;
         }
 
         public override void Update(GameTime gameTime)
@@ -42,11 +50,14 @@ namespace AsteroidEngine
             if (_bounds == null) return;
 
             if (_rectangle.Left >= _bounds.Value.Right ||
-                _rectangle.Right <= _bounds.Value.Left ||
-                _rectangle.Top >= _bounds.Value.Bottom ||
+                _rectangle.Right <= _bounds.Value.Left)
+            {
+                _velocity.X = -_velocity.X;
+            }
+            if (_rectangle.Top >= _bounds.Value.Bottom ||
                 _rectangle.Bottom <= _bounds.Value.Top)
             {
-                Unload();
+                _velocity.Y = -_velocity.Y;
             }
         }
     }

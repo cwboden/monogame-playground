@@ -13,7 +13,7 @@ namespace AsteroidEngine
     /// The player class.
     /// It handles player movement and sprite control
     /// </summary>
-    public class Sprite
+    public class Sprite : ICloneable
     {
         protected readonly Color _color;
         protected float _angle;
@@ -115,6 +115,11 @@ namespace AsteroidEngine
         public virtual void Draw(SpriteBatch spriteBatch, GameTime gameTime)
         {
             spriteBatch.Draw(_texture, _position, null, null, _origin, _angle, _scale, _color);
+        }
+
+        public object Clone()
+        {
+            throw new NotImplementedException();
         }
     }
 }
