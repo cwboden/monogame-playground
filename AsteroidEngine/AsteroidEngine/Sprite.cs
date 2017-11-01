@@ -15,38 +15,31 @@ namespace AsteroidEngine
     /// </summary>
     public class Sprite
     {
-        private readonly Color _color;
-        private readonly Vector2 _velocity;
-        private float _angle;
-        private float _rotationSpeed;
-        private Vector2 _position;
-        private Rectangle _rectangle;
-        private Texture2D _texture;
-        private Rectangle? _bounds;
-        private Vector2 _origin;
+        protected readonly Color _color;
+        protected float _angle;
+        protected float _scaleValue;
+        protected Vector2 _scale;
+        protected Vector2 _position;
+        protected Vector2 _origin;
+        protected Rectangle _rectangle;
+        protected Texture2D _texture;
+        protected Matrix _transform;
 
-        /// <summary>
-        /// Creates a Player at an optional given position
-        /// </summary>
-        /// <param name="position"></param>
-        /// <param name="speed"></param>
-        /// <param name="angle"></param>
-        public Sprite(Vector2 position, float speed = 0, float angle = 0, float rotationSpeed = 0, Rectangle? bounds = null)
+        public Sprite(Vector2 position, float angle = 0, float scale = 1.0f)
         {
             _position = position;
             _angle = angle;
-            _rotationSpeed = rotationSpeed;
-
-            _velocity = new Vector2((float)(speed * Math.Cos(angle)), 
-                                    (float)(speed * Math.Sin(angle)));
+            _scale = new Vector2(scale, scale);
+            _scaleValue = scale;
 
             _texture = null;
             _color = Color.White;
-
-            _bounds = bounds;
+            _origin = Vector2.Zero;
         }
 
-        protected Texture2D Texture => _texture;
+        public float Angle => _angle;
+
+        public Texture2D Texture { get { return this._texture; } private set { this._texture = value; } }
 
         public Vector2 Position => _position;
 
@@ -54,9 +47,11 @@ namespace AsteroidEngine
 
         public Vector2 Origin => _origin;
 
+        public Matrix Transform => _transform;
+
         public bool IsCollided { get; private set; }
 
-        public void LoadContent(ContentManager content, GraphicsDevice graphicsDevice, string assetName)
+        public virtual void LoadContent(ContentManager content, GraphicsDevice graphicsDevice, string assetName)
         {
             _texture = content.Load<Texture2D>(assetName);
 
@@ -65,14 +60,34 @@ namespace AsteroidEngine
 
         protected virtual void OnContentLoad(ContentManager contentManager, GraphicsDevice graphicsDevice)
         {
+            _origin = new Vector2(_texture.Width / 2.0f, _texture.Height / 2.0f);
+
+            UpdateTransformMatrix();
             UpdateRectangle();
         }
 
-        private void UpdateRectangle()
+        private void UpdateTransformMatrix()
         {
-            Vector2 topLeft = _position - _origin;
+            // SRT Basis = Reverse Origin * Scale * Rotation * Translation
+            _transform = Matrix.CreateTranslation(new Vector3(-_origin, 0)) *
+                            Matrix.CreateScale(_scaleValue) *
+                            Matrix.CreateRotationZ(_angle) *
+                            Matrix.CreateTranslation(new Vector3(_position, 0));
+        }
 
-            _rectangle = new Rectangle((int)topLeft.X, (int)topLeft.Y, _texture.Width, _texture.Height);
+        protected virtual void UpdateRectangle()
+        {
+            Vector2 topLeft = Vector2.Transform(Vector2.Zero, _transform);
+            Vector2 topRight = Vector2.Transform(new Vector2(_texture.Width, 0), _transform);
+            Vector2 bottomLeft = Vector2.Transform(new Vector2(0, _texture.Height), _transform);
+            Vector2 bottomRight = Vector2.Transform(new Vector2(_texture.Width, _texture.Height), _transform);
+
+            Vector2 min = new Vector2(MathEx.Min(topLeft.X, topRight.X, bottomLeft.X, bottomRight.X),
+                                        MathEx.Min(topLeft.Y, topRight.Y, bottomLeft.Y, bottomRight.Y));
+            Vector2 max = new Vector2(MathEx.Max(topLeft.X, topRight.X, bottomLeft.X, bottomRight.X),
+                                    MathEx.Max(topLeft.Y, topRight.Y, bottomLeft.Y, bottomRight.Y));
+
+            _rectangle = new Rectangle((int)min.X, (int)min.Y, (int)(max.X - min.X), (int)(max.Y - min.Y));
         }
 
         public virtual void Unload()
@@ -80,106 +95,26 @@ namespace AsteroidEngine
             _texture.Dispose();
         }
 
-        public void Update(GameTime gameTime)
+        public virtual void Update(GameTime gameTime)
         {
-            _position += _velocity * (float) gameTime.ElapsedGameTime.TotalSeconds;
-
-            UpdateRotation(gameTime);
-            UpdateRectangle();
-            CheckBounds();
-        }
-
-        private void UpdateRotation(GameTime gameTime)
-        {
-            _angle += (float) (_rotationSpeed * gameTime.ElapsedGameTime.TotalSeconds);
-
-            if (_angle < 0)
-            {
-                _angle = MathHelper.TwoPi - Math.Abs(_angle);
-            }
-            else if (_angle > MathHelper.TwoPi)
-            {
-                _angle = _angle - MathHelper.TwoPi;
-            }
-        }
-
-        private void CheckBounds()
-        {
-            if (_bounds == null) return;
-
-            Vector2 change = Vector2.Zero;
-
-            if (_rectangle.Left <= _bounds.Value.Left)
-            {
-                change.X = _bounds.Value.Left - _rectangle.Left;
-            }
-            else if (_rectangle.Right >= _bounds.Value.Right)
-            {
-                change.X = _bounds.Value.Right - _rectangle.Right;
-            }
-
-            if (_rectangle.Top <= _bounds.Value.Top)
-            {
-                change.Y = _bounds.Value.Top - _rectangle.Top;
-            }
-            else if (_rectangle.Bottom >= _bounds.Value.Bottom)
-            {
-                change.Y = _bounds.Value.Bottom - _rectangle.Bottom;
-            }
-
-            if (change == Vector2.Zero) return;
-
-            _position = new Vector2((int)_position.X + change.X, (int)_position.Y + change.Y);
+            UpdateTransformMatrix();
             UpdateRectangle();
         }
 
-        public bool checkCollided(Sprite target)
+        public bool CheckCollided(Sprite target)
         {
-            bool intersects = _rectangle.Intersects(target._rectangle) && PerPixelCollision(target); ;
+            bool isIntersected = Collision.HasRectangularCollision(this, target) &&
+                                 Collision.HasPerPixelCollision(this, target);
 
-            IsCollided = intersects;
-            target.IsCollided = intersects;
-            return intersects;
-        }
+            IsCollided = isIntersected;
+            target.IsCollided = isIntersected;
 
-        private bool PerPixelCollision(Sprite target)
-        {
-            var sourceColors = new Color[_texture.Width * _texture.Height];
-            _texture.GetData(sourceColors);
-
-            var targetColors = new Color[target._texture.Width * target._texture.Height];
-            target._texture.GetData(targetColors);
-
-            var left = Math.Max(_rectangle.Left, target._rectangle.Left);
-            var top = Math.Max(_rectangle.Top, target._rectangle.Top);
-            var right = Math.Min(_rectangle.Right, target._rectangle.Right);
-            var bottom = Math.Min(_rectangle.Bottom, target._rectangle.Bottom);
-
-            var width = right - left;
-            var height = bottom - top;
-
-            var intersectingRectangle = new Rectangle(left, top, width, height);
-
-            for (var x = intersectingRectangle.Left; x < intersectingRectangle.Right; ++x)
-            {
-                for (var y = intersectingRectangle.Top; y < intersectingRectangle.Bottom; ++y)
-                {
-                    var sourceColor = sourceColors[(x - _rectangle.Left) + (y - _rectangle.Top) * _texture.Width];
-                    var targetColor = targetColors[(x - target._rectangle.Left) + (y - target._rectangle.Top) * target._texture.Width];
-
-                    if (sourceColor.A > 0 && targetColor.A > 0)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
+            return isIntersected;
         }
 
         public virtual void Draw(SpriteBatch spriteBatch, GameTime gameTime)
         {
-            spriteBatch.Draw(_texture, _position, null, null, _origin, _angle, null, _color);
+            spriteBatch.Draw(_texture, _position, null, null, _origin, _angle, _scale, _color);
         }
     }
 }

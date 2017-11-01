@@ -13,7 +13,7 @@ namespace AsteroidEngine
         GraphicsDeviceManager _graphics;
         SpriteBatch _spriteBatch;
 
-        private DebugSprite _sprite1, _sprite2;
+        private Player _player;
         private Color _clearColor, _collisionColor;
 
         private readonly Rectangle _gameDimensions;
@@ -38,11 +38,9 @@ namespace AsteroidEngine
         /// </summary>
         protected override void Initialize()
         {
-            _sprite1 = new DebugSprite(new Vector2(0, (_graphics.GraphicsDevice.Viewport.Height / 2.0f) - 120), 
-                                        Color.White, 70, 0, _gameDimensions);
-            _sprite2 = new DebugSprite(new Vector2(_graphics.GraphicsDevice.Viewport.Width, (_graphics.GraphicsDevice.Viewport.Height / 2.0f) + 120), 
-                                        Color.White, 60, (float) Math.PI, _gameDimensions);
-
+            _player = new Player(new Vector2(0, (_graphics.GraphicsDevice.Viewport.Height / 2.0f) - 120), 
+                                        0, 0.4f, _gameDimensions);
+            
             _clearColor = Color.CornflowerBlue;
             _collisionColor = Color.Red;
 
@@ -58,8 +56,7 @@ namespace AsteroidEngine
             // Create a new SpriteBatch, which can be used to draw textures.
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            _sprite1.LoadContent(Content, GraphicsDevice, "ship");
-            _sprite2.LoadContent(Content, GraphicsDevice, "ship");
+            _player.LoadContent(Content, GraphicsDevice, "ship");
         }
 
         /// <summary>
@@ -68,8 +65,7 @@ namespace AsteroidEngine
         /// </summary>
         protected override void UnloadContent()
         {
-            _sprite1.Unload();
-            _sprite2.Unload();
+            _player.Unload();
         }
 
         /// <summary>
@@ -87,10 +83,7 @@ namespace AsteroidEngine
                 Exit();
             }
 
-            _sprite1.Update(gameTime);
-            _sprite2.Update(gameTime);
-
-            _sprite1.checkCollided(_sprite2);
+            _player.Update(gameTime);
         }
 
         /// <summary>
@@ -99,18 +92,10 @@ namespace AsteroidEngine
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            if (_sprite1.IsCollided || _sprite2.IsCollided)
-            {
-                GraphicsDevice.Clear(_collisionColor);
-            }
-            else
-            {
-                GraphicsDevice.Clear(_clearColor);
-            }
+            _graphics.GraphicsDevice.Clear(_clearColor);
 
             _spriteBatch.Begin();
-            _sprite1.Draw(_spriteBatch, gameTime);
-            _sprite2.Draw(_spriteBatch, gameTime);
+            _player.Draw(_spriteBatch, gameTime);
             _spriteBatch.End();
 
             base.Draw(gameTime);

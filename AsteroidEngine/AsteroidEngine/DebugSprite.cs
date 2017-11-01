@@ -15,10 +15,10 @@ namespace AsteroidEngine
         private Texture2D _rectangleTexture;
         private Color _originalColor;
 
-        public DebugSprite(Vector2 position, Color rectangleColor, float speed = 0, float angle = 0, float rotationSpeed = 0, Rectangle? bounds = null) : 
-            base(position, speed, angle, rotationSpeed, bounds)
+        public DebugSprite(Vector2 position, float angle = 0, float scale = 1.0f) : 
+            base(position, angle, scale)
         {
-            _rectangleColor = rectangleColor;
+            _rectangleColor = Color.White;
             _originalColor = Color.Black * 0.1f;
         }
 
